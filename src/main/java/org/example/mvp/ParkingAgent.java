@@ -3,8 +3,8 @@ package org.example.mvp;
 
 import org.example.mvp.charge_streatgy.NearestAvailableFirst;
 import org.example.mvp.command.CommandInvoker;
-import org.example.mvp.command.CreatTicketCommand;
 import org.example.mvp.command.ParkCommand;
+import org.example.mvp.command.UnParkCommand;
 import org.example.mvp.parkinglot.ParkingLot;
 import org.example.mvp.parkinglot.Slot;
 import org.example.mvp.ticket.Ticket;
@@ -26,16 +26,22 @@ public class ParkingAgent {
             throw new RuntimeException(e);
         }
 
-        CommandInvoker<Slot> parkCommandInvoker = new CommandInvoker<>();
-        Slot slot = parkCommandInvoker.invoke(new ParkCommand(new ParkingLot(new NearestAvailableFirst()), vehicle));
+        CommandInvoker<Slot> commandInvoker = new CommandInvoker<>();
+        Slot slot = commandInvoker.invoke((new ParkCommand(new ParkingLot(new NearestAvailableFirst()), vehicle)));
 
-        CommandInvoker<Ticket> ticketCommandInvoker = new CommandInvoker<>();
-        Ticket ticket = ticketCommandInvoker.invoke(new CreatTicketCommand(ticketService, slot, vehicle));
-
-        if (ticket != null) {
-            System.out.println("Ticket created successfully: " + ticket.getTicketId());
+        //Ticket Generating
+        Ticket ticket = null;
+        if (slot != null) {
+            ticket = ticketService.createTicket(slot, vehicle);
         } else {
-            System.out.println("Failed to create ticket.");
+            System.out.println("There is no available slot to park");
         }
+
+        Slot availableSlot = commandInvoker.invoke((new UnParkCommand(new ParkingLot(new NearestAvailableFirst()), ticket)));
+
+        Double amount = ticketService.getParkingCharge(ticket);
+
+        System.out.println("For vehicle "+vehicle.getRegistrationNumber()+" amount is "+amount);
+
     }
 }
